@@ -25,14 +25,14 @@ class BeaconView: NSView {
         
         backgroundColor = NSColor.clearColor()
         
-        layer?.cornerRadius = 50
-        layer?.borderWidth = 1
-        layer?.borderColor = NSColor.blackColor().CGColor
+        hidden = true
+        layer?.cornerRadius = 12
+        layer?.masksToBounds = true
     }
     
-    func defaultSetup() {        
-        layer?.cornerRadius = 50
-        layer?.borderWidth = 1
-        layer?.borderColor = NSColor.blackColor().CGColor
+    func defaultSetup() {
+        hidden = false
+        layer?.cornerRadius = 12
+        layer?.masksToBounds = true
     }
 }

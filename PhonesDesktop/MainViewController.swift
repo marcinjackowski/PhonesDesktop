@@ -13,16 +13,14 @@ class MainViewController: ViewController {
     var phonesList: [Phone] = []
     
     @IBOutlet weak var tableView: NSTableView!
-    @IBOutlet weak var firstBeaconView: BeaconView!
-    @IBOutlet weak var secondBeaconView: BeaconView!
-    @IBOutlet weak var thirdBeaconView: BeaconView!
     @IBOutlet weak var pushAlertTextField: NSTextField!
-    
-    var beaconsViews: [BeaconView] = []
+    @IBOutlet weak var currentLocationLabel: NSTextField!
+    @IBOutlet weak var previousLocationLabel: NSTextField!
+    @IBOutlet weak var currentLocationBeaconView: BeaconView!
+    @IBOutlet weak var previousLocationBeaconView: BeaconView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        beaconsViews = [firstBeaconView, secondBeaconView, thirdBeaconView]
         refresh()
     }
     
@@ -31,11 +29,12 @@ class MainViewController: ViewController {
     }
     
     @IBAction func pingPhonesActionButton(sender: NSButton) {
-        if self.tableView.selectedRow != -1 {
+        if phonesList.count > 0 {
+            let index = self.tableView.selectedRow == -1 ? 0 : self.tableView.selectedRow
             
             let parameters = PingService.Parameters(alert: pushAlertTextField.stringValue)
             
-            PingService.ping(phonesList[self.tableView.selectedRow].databaseId, parameters: parameters) { (resutl) -> Void in
+            PingService.ping(phonesList[index].databaseId, parameters: parameters) { (resutl) -> Void in
                 switch resutl {
                 case .Success(let phones):
                     self.refresh()
@@ -47,17 +46,26 @@ class MainViewController: ViewController {
     }
     
     @IBAction func silentPingButtonAction(sender: NSButton) {
-        SilentPingService.ping(phonesList[self.tableView.selectedRow].databaseId) { (resutl) -> Void in
-            switch resutl {
-            case .Success(let phones):
-                self.refresh()
-            case .Error:
-                ()
+        if phonesList.count > 0 {
+            let index = self.tableView.selectedRow == -1 ? 0 : self.tableView.selectedRow
+            SilentPingService.ping(phonesList[index].databaseId) { (resutl) -> Void in
+                switch resutl {
+                case .Success(let phones):
+                    self.refresh()
+                case .Error:
+                    ()
+                }
             }
         }
     }
     
     func refresh() {
+        currentLocationLabel.stringValue = ""
+        previousLocationLabel.stringValue = ""
+        
+        currentLocationBeaconView.hidden = true
+        previousLocationBeaconView.hidden = true
+        
         PhonesListService.getPhonesList { (resutl) -> Void in
             switch resutl {
             case .Success(let phones):
@@ -67,22 +75,18 @@ class MainViewController: ViewController {
                 ()
             }
         }
-        
-        BeaconsService.getBeacons { (result) in
-            switch result {
-            case .Success(let beacons):
-                if beacons.count == 3 {
-                    for index in 0..<beacons.count {
-                        let beaconView = self.beaconsViews[index]
-                        beaconView.defaultSetup()
-                        beaconView.majorValue = beacons[index].majorValue
-                        beaconView.minorValue = beacons[index].minorValue
-                        beaconView.backgroundColor = NSColor.colorForTestEstimote(beacons[index].majorValue)
-                    }
-                }
-            case .Error:
-                ()
-            }
+    }
+    
+    func prepareString(majorValue: Int) -> String {
+        switch majorValue {
+        case 41565:
+            return "Ciepły"
+        case 11348:
+            return "Ciemny"
+        case 62127:
+            return "PM"
+        default:
+            return ""
         }
     }
 }
@@ -113,18 +117,13 @@ extension MainViewController: NSTableViewDelegate {
         
         let phone = phonesList[row]
 
-        beaconsViews.forEach { (beacon) -> () in
-            beacon.defaultSetup()
-            
-            if beacon.majorValue == phone.currentBeacon.majorValue {
-                beacon.layer?.borderWidth = 10
-                beacon.layer?.borderColor = NSColor.blackColor().CGColor
-            }
-            
-            if beacon.majorValue == phone.lastBeacon.majorValue {
-                beacon.layer?.borderWidth = 10
-                beacon.layer?.borderColor = NSColor.redColor().CGColor
-            }
-        }
+        currentLocationBeaconView.defaultSetup()
+        previousLocationBeaconView.defaultSetup()
+        
+        currentLocationBeaconView.backgroundColor = NSColor.colorForTestEstimote(phone.currentBeacon.majorValue)
+        previousLocationBeaconView.backgroundColor = NSColor.colorForTestEstimote(phone.lastBeacon.majorValue)
+        
+        currentLocationLabel.stringValue = prepareString(phone.currentBeacon.majorValue)
+        previousLocationLabel.stringValue = prepareString(phone.lastBeacon.majorValue)
     }
 }
