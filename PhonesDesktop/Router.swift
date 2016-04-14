@@ -20,7 +20,7 @@ enum Router: URLRequestConvertible {
     
     var method: Alamofire.Method {
         switch self {
-        case .Ping:
+        case .Ping, .SilentPing:
             return .PUT
         default:
             return .GET
