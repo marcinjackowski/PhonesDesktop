@@ -111,7 +111,7 @@ extension MainViewController: NSTableViewDelegate {
     }
     
     func tableViewSelectionDidChange(notification: NSNotification) {
-        guard let row = notification.object?.selectedRow where row < phonesList.count else {
+        guard let row = notification.object?.selectedRow where row < phonesList.count && row != -1 else {
             return
         }
         
